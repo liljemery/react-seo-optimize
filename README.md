@@ -2,6 +2,9 @@
 
 Simple and intuitive SEO component for React with JSON-LD schema generation and HTML injection.
 
+![result](https://github.com/user-attachments/assets/2b3207ef-cdfa-4fea-a15c-f42bbcc5a8d5)
+
+
 ## Features
 
 - 🚀 Simple React component for SEO meta tags
@@ -91,6 +94,8 @@ const AboutPage = () => {
 
 ### Step 2: Add Open Graph Tags for Social Media
 
+![unnamed](https://github.com/user-attachments/assets/de7a3720-ed5f-489b-8437-48ee758aa095)
+
 Enhance your social media sharing with Open Graph tags:
 
 ```jsx
@@ -106,6 +111,8 @@ Enhance your social media sharing with Open Graph tags:
 ```
 
 ### Step 3: Add Twitter Card Tags
+
+<img width="585" height="537" alt="card tag" src="https://github.com/user-attachments/assets/7481749a-9a95-4f25-8236-99fcca0a9734" />
 
 Optimize how your links appear on Twitter:
 
