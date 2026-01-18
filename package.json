@@ -1,0 +1,39 @@
+{
+  "name": "react-seo-optimize",
+  "version": "1.0.0",
+  "description": "Simple and intuitive SEO component for React with JSON-LD schema generation and HTML injection",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "generate:schema": "node bin/generate-schema.js"
+  },
+  "bin": {
+    "react-seo-generate-schema": "./bin/generate-schema.js"
+  },
+  "keywords": [
+    "react",
+    "seo",
+    "schema.org",
+    "json-ld",
+    "meta-tags",
+    "open-graph",
+    "twitter-cards",
+    "react-helmet"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-helmet": "^6.0.0"
+  },
+  "files": [
+    "src/",
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

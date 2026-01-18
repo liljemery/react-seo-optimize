@@ -1,0 +1,15 @@
+node_modules/
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.md
+!README.md
+examples/
+test/
+tests/
+__tests__/
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
