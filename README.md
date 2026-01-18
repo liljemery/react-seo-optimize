@@ -1,5 +1,11 @@
 # react-seo-optimize
 
+[![Tests](https://github.com/liljemery/react-seo-optimize/workflows/Tests/badge.svg)](https://github.com/liljemery/react-seo-optimize/actions)
+[![npm version](https://img.shields.io/npm/v/react-seo-optimize.svg)](https://www.npmjs.com/package/react-seo-optimize)
+[![npm downloads](https://img.shields.io/npm/dm/react-seo-optimize.svg)](https://www.npmjs.com/package/react-seo-optimize)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
+
 Simple and intuitive SEO component for React with JSON-LD schema generation and HTML injection.
 
 <img width="694" height="568" alt="Screenshot 2026-01-18 at 6 29 22 PM" src="https://github.com/user-attachments/assets/7e430f06-d0da-489c-af4e-7275fd0d9506" />
