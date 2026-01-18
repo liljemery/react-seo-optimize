@@ -8,6 +8,7 @@
   "scripts": {
     "generate:schema": "node bin/generate-schema.js",
     "test": "vitest",
+    "test:run": "vitest --run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"
   },
