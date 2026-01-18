@@ -1,3 +1,5 @@
+import { validateRequired, validateUrl, validateArray } from './utils/validation.js';
+
 export const generateOrganizationSchema = ({
   name,
   alternateName,
@@ -10,6 +12,12 @@ export const generateOrganizationSchema = ({
   areaServed,
   hasOfferCatalog,
 }) => {
+  validateRequired(name, 'name');
+
+  if (url) validateUrl(url, 'url');
+  if (logo) validateUrl(logo, 'logo');
+  validateArray(sameAs, 'sameAs');
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -36,6 +44,8 @@ export const generateProfessionalServiceSchema = ({
   serviceType,
   provider,
 }) => {
+  if (url) validateUrl(url, 'url');
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'ProfessionalService',
@@ -51,6 +61,23 @@ export const generateProfessionalServiceSchema = ({
 };
 
 export const generateBreadcrumbSchema = (items) => {
+  validateRequired(items, 'items');
+  validateArray(items, 'items');
+
+  if (items.length === 0) {
+    throw new Error('Breadcrumb items array cannot be empty.');
+  }
+
+  items.forEach((item, index) => {
+    if (!item.name) {
+      throw new Error(`Breadcrumb item at index ${index} is missing required field "name".`);
+    }
+    if (!item.url) {
+      throw new Error(`Breadcrumb item at index ${index} is missing required field "url".`);
+    }
+    validateUrl(item.url, `items[${index}].url`);
+  });
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -72,6 +99,8 @@ export const generateWebPageSchema = ({
   inLanguage = 'es',
   isPartOf,
 }) => {
+  if (url) validateUrl(url, 'url');
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',

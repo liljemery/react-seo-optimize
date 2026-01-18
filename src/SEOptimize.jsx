@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Helmet } from 'react-helmet';
 
 const SEOptimize = ({
@@ -68,4 +69,4 @@ const SEOptimize = ({
   );
 };
 
-export default SEOptimize;
+export default memo(SEOptimize);

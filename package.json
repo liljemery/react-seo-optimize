@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "Simple and intuitive SEO component for React with JSON-LD schema generation and HTML injection",
   "main": "src/index.js",
+  "types": "src/index.d.ts",
   "type": "module",
   "scripts": {
-    "generate:schema": "node bin/generate-schema.js"
+    "generate:schema": "node bin/generate-schema.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "bin": {
     "react-seo-generate-schema": "./bin/generate-schema.js"
@@ -25,6 +29,15 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-helmet": "^6.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@vitest/ui": "^1.1.3",
+    "jsdom": "^23.0.1",
+    "react": "^18.2.0",
+    "react-helmet": "^6.1.0",
+    "vitest": "^1.1.3"
   },
   "files": [
     "src/",
