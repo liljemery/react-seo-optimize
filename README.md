@@ -2,8 +2,7 @@
 
 Simple and intuitive SEO component for React with JSON-LD schema generation and HTML injection.
 
-![result](https://github.com/user-attachments/assets/2b3207ef-cdfa-4fea-a15c-f42bbcc5a8d5)
-
+<img width="694" height="568" alt="Screenshot 2026-01-18 at 6 29 22 PM" src="https://github.com/user-attachments/assets/7e430f06-d0da-489c-af4e-7275fd0d9506" />
 
 ## Features
 
