@@ -24,7 +24,10 @@
     "twitter-cards",
     "react-helmet"
   ],
-  "author": "",
+  "author": "Jeremy Inoa Fortuna",
+  "email": "",
+  "url": "https://github.com/liljemery/react-seo-optimize.git",
+  "homepage": "https://github.com/liljemery/react-seo-optimize.git",
   "license": "MIT",
   "peerDependencies": {
     "react": ">=16.8.0",
@@ -47,6 +50,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/liljemery/react-seo-optimize.git"
   }
 }
