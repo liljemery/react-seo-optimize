@@ -13,6 +13,7 @@ build
 .vscode/
 .idea/
 *.md
+!MIGRATION_GUIDE.md
 !README.md
 examples/
 test/
