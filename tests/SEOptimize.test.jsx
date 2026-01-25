@@ -48,6 +48,20 @@ describe('SEOptimize', () => {
     });
   });
 
+  it('should not render canonical link for relative URLs', async () => {
+    const consoleError = console.error;
+    console.error = () => {};
+    
+    render(<SEOptimize canonical="/page" />);
+
+    await waitFor(() => {
+      const link = document.querySelector('link[rel="canonical"]');
+      expect(link).toBeNull();
+    });
+    
+    console.error = consoleError;
+  });
+
   it('should render Open Graph meta tags', async () => {
     render(
       <SEOptimize
@@ -72,6 +86,21 @@ describe('SEOptimize', () => {
 
     const ogType = document.querySelector('meta[property="og:type"]');
     expect(ogType?.getAttribute('content')).toBe('website');
+  });
+
+  it('should render og:image:secure_url for HTTPS images', async () => {
+    render(
+      <SEOptimize
+        title="Test"
+        ogImage="https://example.com/image.png"
+      />
+    );
+
+    await waitFor(() => {
+      const secureUrl = document.querySelector('meta[property="og:image:secure_url"]');
+      expect(secureUrl).toBeTruthy();
+      expect(secureUrl?.getAttribute('content')).toBe('https://example.com/image.png');
+    });
   });
 
   it('should use title as default for og:title if ogTitle not provided', async () => {
@@ -116,6 +145,26 @@ describe('SEOptimize', () => {
     expect(twitterDescription?.getAttribute('content')).toBe('Test description');
   });
 
+  it('should render twitter:site and twitter:creator', async () => {
+    render(
+      <SEOptimize
+        title="Test"
+        twitterSite="@testsite"
+        twitterCreator="@testcreator"
+      />
+    );
+
+    await waitFor(() => {
+      const twitterSite = document.querySelector('meta[name="twitter:site"]');
+      expect(twitterSite).toBeTruthy();
+      expect(twitterSite?.getAttribute('content')).toBe('@testsite');
+
+      const twitterCreator = document.querySelector('meta[name="twitter:creator"]');
+      expect(twitterCreator).toBeTruthy();
+      expect(twitterCreator?.getAttribute('content')).toBe('@testcreator');
+    });
+  });
+
   it('should use default twitter:card value', async () => {
     render(<SEOptimize title="Test" />);
 
@@ -126,13 +175,12 @@ describe('SEOptimize', () => {
     });
   });
 
-  it('should render robots meta tag with default value', async () => {
+  it('should not render robots meta tag by default', async () => {
     render(<SEOptimize title="Test" />);
 
     await waitFor(() => {
       const robots = document.querySelector('meta[name="robots"]');
-      expect(robots).toBeTruthy();
-      expect(robots?.getAttribute('content')).toBe('index, follow');
+      expect(robots).toBeNull();
     });
   });
 
@@ -162,13 +210,103 @@ describe('SEOptimize', () => {
     });
   });
 
-  it('should render extra meta tags', async () => {
-    render(<SEOptimize title="Test" customMeta="custom-value" />);
+  it('should render structuredData prop', async () => {
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Test Organization',
+    };
+
+    render(<SEOptimize title="Test" structuredData={schema} />);
+
+    await waitFor(() => {
+      const script = document.querySelector('script[type="application/ld+json"]');
+      expect(script).toBeTruthy();
+      expect(JSON.parse(script.textContent)).toEqual(schema);
+    });
+  });
+
+  it('should merge multiple schemas', async () => {
+    const schema1 = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Test Organization',
+    };
+    const schema2 = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [],
+    };
+
+    render(<SEOptimize title="Test" structuredData={[schema1, schema2]} />);
+
+    await waitFor(() => {
+      const script = document.querySelector('script[type="application/ld+json"]');
+      expect(script).toBeTruthy();
+      const parsed = JSON.parse(script.textContent);
+      expect(parsed['@context']).toBe('https://schema.org');
+      expect(parsed['@graph']).toBeTruthy();
+      expect(parsed['@graph'].length).toBe(2);
+    });
+  });
+
+  it('should render custom meta tags', async () => {
+    render(<SEOptimize title="Test" customMeta={{ customMeta: 'custom-value' }} />);
 
     await waitFor(() => {
       const meta = document.querySelector('meta[name="customMeta"]');
       expect(meta).toBeTruthy();
       expect(meta?.getAttribute('content')).toBe('custom-value');
+    });
+  });
+
+  it('should render htmlLang attribute', async () => {
+    render(<SEOptimize title="Test" htmlLang="es" />);
+
+    await waitFor(() => {
+      const html = document.querySelector('html');
+      expect(html?.getAttribute('lang')).toBe('es');
+    });
+  });
+
+  it('should render theme-color meta tag', async () => {
+    render(<SEOptimize title="Test" themeColor="#ffffff" />);
+
+    await waitFor(() => {
+      const themeColor = document.querySelector('meta[name="theme-color"]');
+      expect(themeColor).toBeTruthy();
+      expect(themeColor?.getAttribute('content')).toBe('#ffffff');
+    });
+  });
+
+  it('should render article meta tags when ogType is article', async () => {
+    render(
+      <SEOptimize
+        title="Test"
+        ogType="article"
+        articlePublishedTime="2024-01-01T00:00:00Z"
+        articleModifiedTime="2024-01-02T00:00:00Z"
+        articleAuthor="John Doe"
+        articleSection="Technology"
+        articleTag={['react', 'seo']}
+      />
+    );
+
+    await waitFor(() => {
+      const publishedTime = document.querySelector('meta[property="article:published_time"]');
+      expect(publishedTime?.getAttribute('content')).toBe('2024-01-01T00:00:00Z');
+
+      const modifiedTime = document.querySelector('meta[property="article:modified_time"]');
+      expect(modifiedTime?.getAttribute('content')).toBe('2024-01-02T00:00:00Z');
+
+      const author = document.querySelector('meta[property="article:author"]');
+      expect(author?.getAttribute('content')).toBe('John Doe');
+
+      const section = document.querySelector('meta[property="article:section"]');
+      expect(section?.getAttribute('content')).toBe('Technology');
+
+      const tags = document.querySelectorAll('meta[property="article:tag"]');
+      expect(tags.length).toBe(2);
     });
   });
 
@@ -178,5 +316,12 @@ describe('SEOptimize', () => {
     expect(document.querySelector('meta[name="keywords"]')).toBeNull();
     expect(document.querySelector('link[rel="canonical"]')).toBeNull();
     expect(document.querySelector('meta[property="og:image"]')).toBeNull();
+  });
+
+  it('should not render empty meta tags', () => {
+    render(<SEOptimize />);
+
+    expect(document.querySelector('meta[property="og:title"]')).toBeNull();
+    expect(document.querySelector('meta[property="og:description"]')).toBeNull();
   });
 });

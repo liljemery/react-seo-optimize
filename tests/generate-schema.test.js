@@ -76,7 +76,7 @@ describe('generate-schema CLI', () => {
     fs.writeFileSync(htmlPath, html);
 
     const output = execSync(`node ${binPath} "${configPath}" "${htmlPath}"`, { encoding: 'utf-8' });
-    expect(output).toContain('Schema added to index.html');
+    expect(output).toContain('Schema added in index.html');
 
     const updatedHtml = fs.readFileSync(htmlPath, 'utf-8');
     expect(updatedHtml).toContain('application/ld+json');

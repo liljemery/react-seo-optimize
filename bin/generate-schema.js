@@ -38,8 +38,87 @@ const getProjectRoot = () => {
   return fs.existsSync(indexHtmlPath) ? currentDir : process.cwd();
 };
 
-const configPath = process.argv[2] || path.join(getProjectRoot(), 'schema.config.json');
-const indexHtmlPath = process.argv[3] || path.join(getProjectRoot(), 'index.html');
+const parseArgs = () => {
+  const args = process.argv.slice(2);
+  const options = {
+    config: null,
+    html: null,
+    dryRun: false,
+    backup: false,
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--dry-run' || arg === '-d') {
+      options.dryRun = true;
+    } else if (arg === '--backup' || arg === '-b') {
+      options.backup = true;
+    } else if (arg === '--config' || arg === '-c') {
+      options.config = args[++i];
+    } else if (arg === '--html' || arg === '-h') {
+      options.html = args[++i];
+    } else if (arg === '--help') {
+      console.log(`
+Usage: react-seo-generate-schema [options]
+
+Options:
+  --config, -c <path>    Path to schema.config.json (default: ./schema.config.json)
+  --html, -h <path>      Path to index.html (default: ./index.html)
+  --dry-run, -d          Preview changes without modifying files
+  --backup, -b           Create backup before modifying index.html
+  --help                 Show this help message
+
+Examples:
+  react-seo-generate-schema
+  react-seo-generate-schema --dry-run
+  react-seo-generate-schema --backup
+  react-seo-generate-schema --config ./config.json --html ./public/index.html
+`);
+      process.exit(0);
+    } else if (!arg.startsWith('-') && !options.config) {
+      options.config = arg;
+    } else if (!arg.startsWith('-') && options.config && !options.html) {
+      options.html = arg;
+    }
+  }
+
+  return options;
+};
+
+const validateConfig = (config) => {
+  const errors = [];
+  
+  if (!config.name) {
+    errors.push('"name" is required');
+  }
+  
+  if (config.url && !config.url.startsWith('http://') && !config.url.startsWith('https://')) {
+    errors.push('"url" must be an absolute URL');
+  }
+  
+  if (config.logo && !config.logo.startsWith('http://') && !config.logo.startsWith('https://')) {
+    errors.push('"logo" must be an absolute URL');
+  }
+  
+  if (config.sameAs && !Array.isArray(config.sameAs)) {
+    errors.push('"sameAs" must be an array');
+  }
+  
+  if (config.sameAs && Array.isArray(config.sameAs)) {
+    config.sameAs.forEach((url, index) => {
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        errors.push(`"sameAs[${index}]" must be an absolute URL`);
+      }
+    });
+  }
+  
+  return errors;
+};
+
+const options = parseArgs();
+const projectRoot = getProjectRoot();
+const configPath = options.config || path.join(projectRoot, 'schema.config.json');
+const indexHtmlPath = options.html || path.join(projectRoot, 'index.html');
 
 let config = {};
 
@@ -62,8 +141,10 @@ if (fs.existsSync(configPath)) {
   process.exit(1);
 }
 
-if (!config.name) {
-  console.error('❌ "name" is required in schema.config.json');
+const validationErrors = validateConfig(config);
+if (validationErrors.length > 0) {
+  console.error('❌ Config validation errors:');
+  validationErrors.forEach(error => console.error(`  - ${error}`));
   process.exit(1);
 }
 
@@ -76,6 +157,7 @@ try {
   }
 
   let htmlContent = fs.readFileSync(indexHtmlPath, 'utf-8');
+  const originalContent = htmlContent;
 
   const schemaJsonString = JSON.stringify(schema, null, 2);
   const indentedSchema = schemaJsonString
@@ -90,22 +172,50 @@ ${indentedSchema}
 
   const scriptRegex = /    <!-- Structured Data for Search Engines -->\s*<script type="application\/ld\+json">[\s\S]*?<\/script>/;
   
+  let action = 'unchanged';
   if (scriptRegex.test(htmlContent)) {
     htmlContent = htmlContent.replace(scriptRegex, schemaScript);
-    console.log('✅ Schema updated in index.html');
+    action = 'updated';
   } else {
     const headEndRegex = /(<\/head>)/;
     if (headEndRegex.test(htmlContent)) {
       htmlContent = htmlContent.replace(headEndRegex, `${schemaScript}\n  $1`);
-      console.log('✅ Schema added to index.html');
+      action = 'added';
     } else {
       console.error('❌ Could not find </head> tag in index.html');
       process.exit(1);
     }
   }
 
-  fs.writeFileSync(indexHtmlPath, htmlContent, 'utf-8');
-  console.log(`✅ Schema successfully written to ${indexHtmlPath}`);
+  if (options.dryRun) {
+    console.log('🔍 DRY RUN MODE - No files will be modified\n');
+    console.log('Schema that would be generated:');
+    console.log(JSON.stringify(schema, null, 2));
+    console.log('\nAction:', action === 'unchanged' ? 'No changes needed' : `Schema would be ${action}`);
+    if (action !== 'unchanged') {
+      console.log('\nDiff preview:');
+      const diffStart = htmlContent.indexOf('<!-- Structured Data');
+      const diffEnd = htmlContent.indexOf('</script>', diffStart) + 8;
+      if (diffStart !== -1) {
+        console.log(htmlContent.substring(diffStart, diffEnd));
+      }
+    }
+    process.exit(0);
+  }
+
+  if (options.backup && action !== 'unchanged') {
+    const backupPath = `${indexHtmlPath}.backup.${Date.now()}`;
+    fs.copyFileSync(indexHtmlPath, backupPath);
+    console.log(`📦 Backup created: ${backupPath}`);
+  }
+
+  if (action !== 'unchanged') {
+    fs.writeFileSync(indexHtmlPath, htmlContent, 'utf-8');
+    console.log(`✅ Schema ${action} in index.html`);
+    console.log(`✅ Schema successfully written to ${indexHtmlPath}`);
+  } else {
+    console.log('✅ Schema already exists and is up to date');
+  }
   
 } catch (error) {
   console.error(`❌ Error updating index.html: ${error.message}`);

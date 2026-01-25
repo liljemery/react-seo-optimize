@@ -13,10 +13,13 @@ Simple and intuitive SEO component for React with JSON-LD schema generation and 
 ## Features
 
 - 🚀 Simple React component for SEO meta tags
-- 📊 JSON-LD schema generators (Organization, ProfessionalService, Breadcrumb, WebPage)
-- 🔧 CLI tool to inject schemas into HTML files
-- 🎯 Open Graph and Twitter Card support
+- 📊 JSON-LD schema generators (9 types: Organization, Article, Product, FAQ, HowTo, LocalBusiness, and more)
+- 🔧 CLI tool to inject schemas into HTML files (with dry-run and backup support)
+- 🎯 Open Graph and Twitter Card support (with secure URLs and article tags)
 - 💡 Intuitive API with smart defaults
+- ✅ SSR/SSG ready with native DOM manipulation (no dependencies)
+- 🔒 Type-safe with full TypeScript support
+- 🎨 Multiple schema composition support
 
 ## Installation
 
@@ -31,8 +34,10 @@ yarn add react-seo-optimize
 **Peer Dependencies:**
 
 ```bash
-npm install react react-helmet
+npm install react
 ```
+
+> **⚠️ Breaking Change in v2.0:** The library no longer requires `react-helmet` or `react-helmet-async`. It now uses native DOM manipulation for better performance and SSR compatibility. See [Migration Guide](./MIGRATION_GUIDE.md) for details.
 
 ## Quick Start
 
@@ -43,7 +48,7 @@ npm install react react-helmet
 npm install react-seo-optimize
 
 # Install peer dependencies
-npm install react react-helmet
+npm install react
 ```
 
 ### 2. Basic Usage in Your React Component
@@ -251,7 +256,20 @@ For static HTML files or global organization schema, use the CLI tool:
 2. Run the CLI command:
 
 ```bash
+# Basic usage
 npx react-seo-generate-schema
+
+# Preview changes without modifying files
+npx react-seo-generate-schema --dry-run
+
+# Create backup before modifying
+npx react-seo-generate-schema --backup
+
+# Custom paths
+npx react-seo-generate-schema --config ./config.json --html ./public/index.html
+
+# Help
+npx react-seo-generate-schema --help
 ```
 
 Or add to your `package.json` scripts:
@@ -304,7 +322,17 @@ const ArticlePage = ({ article }) => {
         twitterImage={article.featuredImage}
         robots={article.published ? 'index, follow' : 'noindex, nofollow'}
         author={article.author.name}
-        schema={orgSchema}
+        htmlLang="en"
+        themeColor="#ffffff"
+        twitterSite="@mycompany"
+        twitterCreator={article.author.twitter}
+        ogImageSecureUrl={article.featuredImage}
+        articlePublishedTime={article.publishedAt}
+        articleModifiedTime={article.updatedAt}
+        articleAuthor={article.author.name}
+        articleSection="Technology"
+        articleTag={article.tags}
+        structuredData={orgSchema}
       />
       
       <article>
@@ -318,6 +346,43 @@ const ArticlePage = ({ article }) => {
 
 ## Advanced Usage
 
+### Multiple Schema Support
+
+You can now combine multiple schemas on a single page:
+
+```jsx
+import { SEOptimize, generateOrganizationSchema, generateBreadcrumbSchema, generateArticleSchema } from 'react-seo-optimize';
+
+const ArticlePage = ({ article }) => {
+  const orgSchema = generateOrganizationSchema({
+    name: 'My Company',
+    url: 'https://example.com',
+  });
+
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: 'https://example.com' },
+    { name: 'Blog', url: 'https://example.com/blog' },
+    { name: article.title, url: `https://example.com/blog/${article.slug}` },
+  ]);
+
+  const articleSchema = generateArticleSchema({
+    headline: article.title,
+    description: article.excerpt,
+    datePublished: article.publishedAt,
+    author: { '@type': 'Person', name: article.author.name },
+  });
+
+  return (
+    <SEOptimize
+      title={`${article.title} | My Company`}
+      description={article.excerpt}
+      canonical={`https://example.com/blog/${article.slug}`}
+      structuredData={[orgSchema, breadcrumbSchema, articleSchema]}
+    />
+  );
+};
+```
+
 ### Schema Generators Reference
 
 All available schema generators:
@@ -327,7 +392,12 @@ import {
   generateOrganizationSchema,
   generateProfessionalServiceSchema,
   generateBreadcrumbSchema,
-  generateWebPageSchema
+  generateWebPageSchema,
+  generateArticleSchema,
+  generateProductSchema,
+  generateFAQPageSchema,
+  generateHowToSchema,
+  generateLocalBusinessSchema,
 } from 'react-seo-optimize';
 
 // Organization schema
@@ -342,12 +412,61 @@ const orgSchema = generateOrganizationSchema({
   ],
 });
 
-// WebPage schema
-const webPageSchema = generateWebPageSchema({
-  name: 'Page Title',
-  description: 'Page description',
-  url: 'https://example.com/page',
-  inLanguage: 'en',
+// Article schema
+const articleSchema = generateArticleSchema({
+  headline: 'Article Title',
+  description: 'Article description',
+  datePublished: '2024-01-01T00:00:00Z',
+  author: { '@type': 'Person', name: 'John Doe' },
+});
+
+// Product schema
+const productSchema = generateProductSchema({
+  name: 'Product Name',
+  description: 'Product description',
+  image: 'https://example.com/product.jpg',
+  offers: {
+    '@type': 'Offer',
+    price: '99.99',
+    priceCurrency: 'USD',
+  },
+});
+
+// FAQ schema
+const faqSchema = generateFAQPageSchema({
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is this?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'This is an answer.',
+      },
+    },
+  ],
+});
+
+// HowTo schema
+const howToSchema = generateHowToSchema({
+  name: 'How to Do Something',
+  step: [
+    {
+      '@type': 'HowToStep',
+      name: 'Step 1',
+      text: 'First, do this',
+    },
+  ],
+});
+
+// LocalBusiness schema
+const localBusinessSchema = generateLocalBusinessSchema({
+  name: 'My Business',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '123 Main St',
+    addressLocality: 'City',
+    addressCountry: 'US',
+  },
 });
 ```
 
@@ -357,26 +476,72 @@ const webPageSchema = generateWebPageSchema({
 |------|------|---------|-------------|
 | `title` | string | - | Page title |
 | `description` | string | - | Meta description |
-| `keywords` | string | - | Meta keywords |
-| `canonical` | string | - | Canonical URL |
+| `keywords` | string | - | Meta keywords (deprecated by search engines) |
+| `canonical` | string | - | Canonical URL (must be absolute) |
 | `ogTitle` | string | `title` | Open Graph title |
 | `ogDescription` | string | `description` | Open Graph description |
 | `ogUrl` | string | `canonical` | Open Graph URL |
 | `ogImage` | string | - | Open Graph image |
+| `ogImageSecureUrl` | string | - | Open Graph secure image URL |
 | `ogType` | string | `'website'` | Open Graph type |
 | `ogImageWidth` | string | - | Open Graph image width |
 | `ogImageHeight` | string | - | Open Graph image height |
 | `ogImageAlt` | string | - | Open Graph image alt |
 | `ogSiteName` | string | - | Open Graph site name |
 | `ogLocale` | string | - | Open Graph locale |
+| `articlePublishedTime` | string | - | Article published time (ISO 8601) |
+| `articleModifiedTime` | string | - | Article modified time (ISO 8601) |
+| `articleAuthor` | string | - | Article author |
+| `articleSection` | string | - | Article section |
+| `articleTag` | string[] | - | Article tags |
 | `twitterCard` | string | `'summary_large_image'` | Twitter card type |
 | `twitterTitle` | string | `title` | Twitter title |
 | `twitterDescription` | string | `description` | Twitter description |
 | `twitterImage` | string | `ogImage` | Twitter image |
-| `schema` | object | - | JSON-LD schema object |
-| `robots` | string | `'index, follow'` | Robots meta tag |
+| `twitterImageAlt` | string | - | Twitter image alt |
+| `twitterSite` | string | - | Twitter site (@username) |
+| `twitterCreator` | string | - | Twitter creator (@username) |
+| `schema` | object \| object[] | - | JSON-LD schema object(s) (deprecated, use `structuredData`) |
+| `structuredData` | object \| object[] | - | JSON-LD schema object(s) |
+| `robots` | string | - | Robots meta tag (no default in v2.0) |
 | `author` | string | - | Author meta tag |
-| `...extraMeta` | object | - | Additional meta tags |
+| `htmlLang` | string | - | HTML lang attribute |
+| `themeColor` | string | - | Theme color for mobile browsers |
+| `viewport` | string | - | Viewport meta tag |
+| `charset` | string | `'UTF-8'` | Charset meta tag |
+| `customMeta` | Record<string, string> | - | Additional meta tags |
+
+> **Note:** The `schema` prop is still supported for backward compatibility, but `structuredData` is preferred. Both support single objects or arrays for multiple schemas.
+
+## SSR Support
+
+For server-side rendering, use the `renderSEOTags` utility:
+
+```jsx
+import { renderSEOTags } from 'react-seo-optimize';
+
+// In your SSR function
+const seoTags = renderSEOTags({
+  title: 'Page Title',
+  description: 'Page description',
+  canonical: 'https://example.com/page',
+});
+
+// Inject into your HTML template
+const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  ${seoTags}
+</head>
+<body>...</body>
+</html>
+`;
+```
+
+## Migration from v1.x
+
+If you're upgrading from v1.x, please see the [Migration Guide](./MIGRATION_GUIDE.md) for breaking changes and upgrade instructions.
 
 ## Examples
 
@@ -385,3 +550,24 @@ See `EXAMPLE_USAGE.jsx` in the package for more examples.
 ## License
 
 MIT
+
+## Changelog
+
+### v2.0.0
+
+**Breaking Changes:**
+- Removed `react-helmet` and `react-helmet-async` dependencies (now uses native DOM manipulation)
+- Removed default value for `robots` prop (must be explicit)
+- `canonical` URLs must now be absolute (relative URLs rejected)
+- Changed `extraMeta` to `customMeta` (object instead of spread props)
+
+**New Features:**
+- Added 5 new schema generators: Article, Product, FAQPage, HowTo, LocalBusiness
+- Support for multiple schemas via `structuredData` prop (array)
+- Added `ogImageSecureUrl` for HTTPS images
+- Added `twitterSite` and `twitterCreator` props
+- Added `htmlLang`, `themeColor`, `viewport`, `charset` props
+- Added article-specific meta tags (`articlePublishedTime`, `articleModifiedTime`, etc.)
+- CLI now supports `--dry-run` and `--backup` flags
+- Improved TypeScript types (removed `any`, added proper types)
+- Better validation for canonical URLs and image dimensions
